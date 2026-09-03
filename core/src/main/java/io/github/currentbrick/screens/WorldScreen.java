@@ -546,25 +546,9 @@ public class WorldScreen implements Screen {
             screenY
                 + heightOffset;
 
-        /*
-         * PolygonSpriteBatch vertices are:
-         *
-         * position X
-         * position Y
-         * packed colour
-         * U
-         * V
-         *
-         * We explicitly map the four CORNERS of the PNG
-         * onto the four corners of the isometric diamond.
-         */
 
-        float color =
-            applyNight(
-                getGrassColor(tile)
-            ).toFloatBits();
+        float color = applyNight(getGrassColor(tile)).toFloatBits();
 
-        // TOP
         grassVertices[0] = topX;
         grassVertices[1] = topY;
         grassVertices[2] = color;
@@ -649,12 +633,7 @@ public class WorldScreen implements Screen {
 
         shapeRenderer.setColor(
             applyNight(
-                new Color(
-                    0.35f,
-                    0.18f,
-                    0.07f,
-                    1f
-                )
+                new Color(0.55f, 0.34f, 0.20f, 1f)
             )
         );
 
@@ -668,20 +647,9 @@ public class WorldScreen implements Screen {
 
         // LEAVES
 
+        shapeRenderer.setColor(applyNight(getGrassColor(tile)));
 
-        shapeRenderer.setColor(
-            applyNight(
-                new Color(
-                    0.08f,
-                    0.45f,
-                    0.10f,
-                    1f
-                )
-            )
-        );
-
-        float leafSize =
-            30f * tree.size;
+        float leafSize = 30f * tree.size;
 
         shapeRenderer.triangle(
             screenX,
