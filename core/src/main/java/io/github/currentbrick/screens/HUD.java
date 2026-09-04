@@ -10,7 +10,7 @@ public class HUD {
 
     private SpriteBatch spriteBatch;
     private BitmapFont font;
-    private Hotbar hotbar;
+    public Hotbar hotbar;
 
     public HUD(Inventory inventory) {
         spriteBatch = new SpriteBatch();

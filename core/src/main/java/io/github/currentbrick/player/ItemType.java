@@ -8,7 +8,8 @@ public enum ItemType {
 
     SAND("Sand"),
 
-    GRASS("Grass");
+    GRASS("Grass"),
+    TORCH("Torch");
 
     private final String displayName;
 

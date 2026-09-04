@@ -1,5 +1,7 @@
 package io.github.currentbrick.generation;
 
+import io.github.currentbrick.blocks.Torch;
+
 import java.util.ArrayList;
 
 public class Chunk {
@@ -12,13 +14,17 @@ public class Chunk {
     private int seed;
 
     private ArrayList<Tree> trees;
+    private ArrayList<Torch> torches;
+    private World world;
 
-    public Chunk(int chunkX, int chunkY, int seed) {
+    public Chunk(int chunkX, int chunkY, int seed, World world) {
         this.chunkX = chunkX;
         this.chunkY = chunkY;
         this.seed = seed;
+        this.world = world;
         tiles = new Tile[SIZE][SIZE];
         trees = new ArrayList<>();
+        torches = new ArrayList<>();
         generateTerrain();
         generateTrees();
     }
@@ -187,5 +193,21 @@ public class Chunk {
 
     public void removeTree(Tree tree) {
         trees.remove(tree);
+    }
+
+    public void addTorch(Torch torch) {
+        torches.add(torch);
+    }
+
+    public ArrayList<Torch> getTorches() {
+        return torches;
+    }
+
+    public void removeTorch(Torch torch) {
+        torches.remove(torch);
+    }
+
+    public Tile[][] getTiles() {
+        return tiles;
     }
 }

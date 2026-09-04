@@ -12,6 +12,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import com.badlogic.gdx.math.Vector3;
+import io.github.currentbrick.blocks.Torch;
+import io.github.currentbrick.player.ItemStack;
 import io.github.currentbrick.player.ItemType;
 import io.github.currentbrick.player.Player;
 import io.github.currentbrick.generation.*;
@@ -41,7 +43,7 @@ public class WorldScreen implements Screen {
     private static final float SNOW_HEIGHT = 13f;
 
     private float worldTime = 12f;
-    private float dayLength = 240f;
+    private float dayLength = 120f;
 
     private String worldName;
 
@@ -440,7 +442,7 @@ public class WorldScreen implements Screen {
                     drawTile(globalX, globalY, tile);
 
                     if (tile.type == TileType.SAND && tile.height <= 1) {
-                        drawWater(globalX, globalY);}
+                        drawWater(globalX, globalY, tile);}
 
                     shapeRenderer.end();
 
@@ -470,6 +472,27 @@ public class WorldScreen implements Screen {
                         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
                         drawTree(tree);
+
+                        shapeRenderer.end();
+                    }
+
+                    Torch torch =
+                        world.getTorchAtWorldCoords(
+                            globalX,
+                            globalY
+                        );
+
+                    if (torch != null) {
+
+                        shapeRenderer.setProjectionMatrix(
+                            camera.combined
+                        );
+
+                        shapeRenderer.begin(
+                            ShapeRenderer.ShapeType.Filled
+                        );
+
+                        drawTorch(torch);
 
                         shapeRenderer.end();
                     }
@@ -547,7 +570,7 @@ public class WorldScreen implements Screen {
                 + heightOffset;
 
 
-        float color = applyNight(getGrassColor(tile)).toFloatBits();
+        float color = applyLighting(getGrassColor(tile), tile).toFloatBits();
 
         grassVertices[0] = topX;
         grassVertices[1] = topY;
@@ -632,9 +655,9 @@ public class WorldScreen implements Screen {
 
 
         shapeRenderer.setColor(
-            applyNight(
-                new Color(0.55f, 0.34f, 0.20f, 1f)
-            )
+            applyLighting(
+                new Color(0.55f, 0.34f, 0.20f, 1f),
+                tile)
         );
 
         shapeRenderer.rect(
@@ -647,7 +670,7 @@ public class WorldScreen implements Screen {
 
         // LEAVES
 
-        shapeRenderer.setColor(applyNight(getGrassColor(tile)));
+        shapeRenderer.setColor(applyLighting(getGrassColor(tile), tile));
 
         float leafSize = 30f * tree.size;
 
@@ -662,6 +685,67 @@ public class WorldScreen implements Screen {
 
             screenX + leafSize,
             groundY + trunkHeight
+        );
+    }
+
+    private void drawTorch(Torch torch) {
+
+        float screenX =
+            (torch.x - torch.y)
+                * TILE_WIDTH / 2f;
+
+        float screenY =
+            (torch.x + torch.y)
+                * TILE_HEIGHT / 2f;
+
+        Tile tile =
+            world.getTileAtWorldCoords(
+                torch.x,
+                torch.y
+            );
+
+        if (tile == null) {
+            return;
+        }
+
+        float groundY =
+            screenY +
+                tile.height * HEIGHT_SCALE;
+
+        // Stick
+        shapeRenderer.setColor(
+            applyLighting(
+                new Color(
+                    0.35f,
+                    0.18f,
+                    0.08f,
+                    1f
+                ),
+                tile
+            )
+        );
+
+        shapeRenderer.rect(
+            screenX - 3,
+            groundY,
+            6,
+            20
+        );
+
+        // Flame
+        shapeRenderer.setColor(
+            new Color(
+                1f,
+                0.55f,
+                0.1f,
+                1f
+            )
+        );
+
+        shapeRenderer.circle(
+            screenX,
+            groundY + 25,
+            6
         );
     }
 
@@ -802,13 +886,13 @@ public class WorldScreen implements Screen {
                     - leftWallDepth;
 
             shapeRenderer.setColor(
-                applyNight(
+                applyLighting(
                     new Color(
                         tileColor.r - 0.05f,
                         tileColor.g - 0.05f,
                         tileColor.b - 0.05f,
                         1f
-                    )
+                    ), tile
                 )
             );
 
@@ -854,13 +938,13 @@ public class WorldScreen implements Screen {
                     - rightWallDepth;
 
             shapeRenderer.setColor(
-                applyNight(
+                applyLighting(
                     new Color(
                         tileColor.r - 0.1f,
                         tileColor.g - 0.1f,
                         tileColor.b - 0.1f,
                         1f
-                    )
+                    ), tile
                 )
             );
 
@@ -903,7 +987,7 @@ public class WorldScreen implements Screen {
         if (tile.type != TileType.GRASS) {
 
             shapeRenderer.setColor(
-                applyNight(tileColor)
+                applyLighting(tileColor, tile)
             );
 
             shapeRenderer.triangle(
@@ -934,7 +1018,7 @@ public class WorldScreen implements Screen {
     // WATER
 
 
-    private void drawWater(float globalX, float globalY) {
+    private void drawWater(float globalX, float globalY, Tile tile) {
         Gdx.gl.glEnable(GL20.GL_BLEND);
 
         Gdx.gl.glBlendFunc(
@@ -986,13 +1070,13 @@ public class WorldScreen implements Screen {
                 + waterOffset;
 
         shapeRenderer.setColor(
-            applyNight(
+            applyLighting(
                 new Color(
                     0f,
                     0.43f,
                     1f,
                     WATER_ALPHA
-                )
+                ), tile
             )
         );
 
@@ -1125,13 +1209,13 @@ public class WorldScreen implements Screen {
 
 
         shapeRenderer.setColor(
-            applyNight(
+            applyLighting(
                 new Color(
                     0.82f,
                     0.82f,
                     0.82f,
                     1f
-                )
+                ), tile
             )
         );
 
@@ -1162,13 +1246,13 @@ public class WorldScreen implements Screen {
 
 
         shapeRenderer.setColor(
-            applyNight(
+            applyLighting(
                 new Color(
                     0.75f,
                     0.75f,
                     0.75f,
                     1f
-                )
+                ), tile
             )
         );
 
@@ -1199,13 +1283,13 @@ public class WorldScreen implements Screen {
 
 
         shapeRenderer.setColor(
-            applyNight(
+            applyLighting(
                 new Color(
                     0.95f,
                     0.95f,
                     0.95f,
                     1f
-                )
+                ), tile
             )
         );
 
@@ -1351,7 +1435,7 @@ public class WorldScreen implements Screen {
                 * HEIGHT_SCALE;
 
         shapeRenderer.setColor(
-            applyNight(Color.WHITE)
+            applyLighting(Color.WHITE, tile)
         );
 
         // Body
@@ -1412,20 +1496,32 @@ public class WorldScreen implements Screen {
         return smoothstep(t);
     }
 
-    private Color applyNight(
-        Color color
-    ) {
+    private Color applyLighting(Color color, Tile tile) {
 
         float night =
             getNightAmount();
 
         float brightness =
-            1f - night * 0.65f;
+            1f - night * 0.8f;
+        brightness += tile.lightLevel * night * 0.8f;
+
+        brightness = Math.min(brightness, 1f);
+
+        float torch = tile.lightLevel * night;
+
+        float red =
+            brightness + torch * 0.5f;
+
+        float green =
+            brightness + torch * 0.25f;
+
+        float blue =
+            brightness - torch * 0.1f;
 
         return new Color(
-            color.r * brightness,
-            color.g * brightness,
-            color.b * brightness,
+            color.r * red,
+            color.g * green,
+            color.b * blue,
             color.a
         );
     }
@@ -1464,13 +1560,58 @@ public class WorldScreen implements Screen {
     }
 
     private void interactWithTile() {
-
-        if (
-            selectedTileX == Integer.MIN_VALUE
-                || selectedTileY == Integer.MIN_VALUE
-        ) {
+        if (selectedTileX == Integer.MIN_VALUE || selectedTileY == Integer.MIN_VALUE) {
             return;
         }
+
+        // Check distance to selected tile
+        float dx = player.getX() - selectedTileX;
+        float dy = player.getY() - selectedTileY;
+
+        float distance = (float)Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > INTERACTION_RANGE) {
+            System.out.println("Too far away!");
+            return;
+        }
+        ItemStack stack = hud.hotbar.getSelectedItem();
+        if (stack != null) {
+            if (player.getInventory().hasItem(ItemType.TORCH, 1) && stack.getType() == ItemType.TORCH) {
+
+                // Don't place another torch on an existing torch
+                Torch existingTorch =
+                    world.getTorchAtWorldCoords(
+                        selectedTileX,
+                        selectedTileY
+                    );
+
+                if (existingTorch != null) {
+                    return;
+                }
+
+                // Place torch
+                world.addTorch(
+                    selectedTileX,
+                    selectedTileY
+                );
+
+                // Remove one torch from inventory
+                player.getInventory().removeItem(
+                    ItemType.TORCH,
+                    1
+                );
+
+                System.out.println(
+                    "Placed torch!"
+                );
+
+                return;
+            }
+        }
+
+        // ==========================================
+        // TREE INTERACTION
+        // ==========================================
 
         Tree tree =
             world.getTreeAtWorldCoords(
@@ -1479,29 +1620,6 @@ public class WorldScreen implements Screen {
             );
 
         if (tree == null) {
-            return;
-        }
-
-        // Distance between player and tree
-        float dx =
-            player.getX() - tree.x;
-
-        float dy =
-            player.getY() - tree.y;
-
-        float distance =
-            (float)Math.sqrt(
-                dx * dx +
-                    dy * dy
-            );
-
-        // Too far away
-        if (distance > INTERACTION_RANGE) {
-
-            System.out.println(
-                "Too far away!"
-            );
-
             return;
         }
 
@@ -1621,4 +1739,6 @@ public class WorldScreen implements Screen {
                 + worldName
         );
     }
+
+
 }

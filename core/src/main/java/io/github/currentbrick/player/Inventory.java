@@ -130,4 +130,22 @@ public class Inventory {
 
         return false;
     }
+
+    public boolean hasItem(ItemType type, int amount) {
+
+        int total = 0;
+
+        for (ItemStack stack : slots) {
+
+            if (stack != null && stack.getType() == type) {
+                total += stack.getAmount();
+
+                if (total >= amount) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }

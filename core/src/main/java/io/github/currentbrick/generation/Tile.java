@@ -9,6 +9,7 @@ public class Tile {
 
     public float temperature;
     public float moisture;
+    public float lightLevel;
 
     public Tile(
         TileType type,

@@ -1,5 +1,7 @@
 package io.github.currentbrick.generation;
 
+import io.github.currentbrick.blocks.Torch;
+
 import java.util.*;
 
 public class World {
@@ -32,7 +34,7 @@ public class World {
         String key = chunkX + "," + chunkY;
         if (!chunks.containsKey(key)) {
             // Updated to pass coordinates down into Chunk for proper noise mapping
-            chunks.put(key, new Chunk(chunkX, chunkY, seed));
+            chunks.put(key, new Chunk(chunkX, chunkY, seed, this));
 
         }
     }
@@ -195,6 +197,192 @@ public class World {
         }
 
         return false;
+    }
+
+    public Torch getTorchAtWorldCoords(int globalX, int globalY) {
+        int chunkX = Math.floorDiv(globalX, Chunk.SIZE);
+        int chunkY = Math.floorDiv(globalY, Chunk.SIZE);
+
+        int localX = Math.floorMod(globalX, Chunk.SIZE);
+        int localY = Math.floorMod(globalY, Chunk.SIZE);
+
+        Chunk chunk = getChunk(chunkX, chunkY);
+        if (chunk == null) {
+            return null;
+        }
+        for (Torch torch : chunk.getTorches()) {
+            if (torch.x == globalX && torch.y == globalY) {
+                return torch;
+            }
+        }
+        return null;
+    }
+
+    public void removeTorchAtWorldCoords(int globalX, int globalY) {
+        int chunkX = Math.floorDiv(globalX, Chunk.SIZE);
+        int chunkY = Math.floorDiv(globalY, Chunk.SIZE);
+        Chunk chunk = getChunk(chunkX, chunkY);
+
+        if (chunk == null) {
+            return;
+        }
+
+        Torch torch = getTorchAtWorldCoords(globalX, globalY);
+
+        if (torch != null) {
+            chunk.removeTorch(torch);
+            bakeTorchLighting();
+        }
+    }
+
+    public void bakeTorchLighting() {
+
+        // Clear all existing baked light
+        for (Chunk chunk : chunks.values()) {
+
+            for (Tile[] row : chunk.getTiles()) {
+
+                for (Tile tile : row) {
+                    tile.lightLevel = 0f;
+                }
+            }
+        }
+
+        // Bake every torch
+        for (Chunk chunk : chunks.values()) {
+
+            for (Torch torch : chunk.getTorches()) {
+
+                int torchX = torch.x;
+                int torchY = torch.y;
+
+                int radius = torch.TORCH_RADIUS;
+
+                for (int x = torchX - radius;
+                     x <= torchX + radius;
+                     x++) {
+
+                    for (int y = torchY - radius;
+                         y <= torchY + radius;
+                         y++) {
+
+                        Tile tile =
+                            getLoadedTileAtWorldCoords(x, y);
+
+                        if (tile == null) {
+                            continue;
+                        }
+
+                        float dx = x - torchX;
+                        float dy = y - torchY;
+
+                        float distance =
+                            (float)Math.sqrt(
+                                dx * dx +
+                                    dy * dy
+                            );
+
+                        if (distance > radius) {
+                            continue;
+                        }
+
+                        float light =
+                            1f - distance / radius;
+
+                        tile.lightLevel =
+                            Math.max(
+                                tile.lightLevel,
+                                light
+                            );
+                    }
+                }
+            }
+        }
+    }
+
+    public void addTorch(int x, int y) {
+        int chunkX = Math.floorDiv(x, Chunk.SIZE);
+        int chunkY = Math.floorDiv(y, Chunk.SIZE);
+
+        loadChunk(chunkX, chunkY);
+
+        Chunk chunk = getChunk(chunkX, chunkY);
+
+        Torch torch = new Torch(x, y);
+
+        chunk.addTorch(torch);
+
+        bakeTorchArea(x, y, torch.TORCH_RADIUS);
+    }
+
+    private void bakeTorchArea(
+        int torchX,
+        int torchY,
+        int radius
+    ) {
+
+        for (int x = torchX - radius;
+             x <= torchX + radius;
+             x++) {
+
+            for (int y = torchY - radius;
+                 y <= torchY + radius;
+                 y++) {
+
+                Tile tile =
+                    getLoadedTileAtWorldCoords(x, y);
+
+                if (tile == null) {
+                    continue;
+                }
+
+                float dx = x - torchX;
+                float dy = y - torchY;
+
+                float distance =
+                    (float)Math.sqrt(
+                        dx * dx +
+                            dy * dy
+                    );
+
+                if (distance > radius) {
+                    continue;
+                }
+
+                float light =
+                    1f - distance / radius;
+
+                tile.lightLevel =
+                    Math.max(
+                        tile.lightLevel,
+                        light
+                    );
+            }
+        }
+    }
+
+    public Tile getLoadedTileAtWorldCoords(int globalX, int globalY) {
+
+        int chunkX =
+            Math.floorDiv(globalX, Chunk.SIZE);
+
+        int chunkY =
+            Math.floorDiv(globalY, Chunk.SIZE);
+
+        Chunk chunk =
+            getChunk(chunkX, chunkY);
+
+        if (chunk == null) {
+            return null;
+        }
+
+        int localX =
+            Math.floorMod(globalX, Chunk.SIZE);
+
+        int localY =
+            Math.floorMod(globalY, Chunk.SIZE);
+
+        return chunk.getTile(localX, localY);
     }
 }
 

@@ -17,6 +17,7 @@ public class Player {
         this.x = x;
         this.y = y;
         inventory = new Inventory();
+        inventory.addItem(ItemType.TORCH, 64);
     }
 
     public void update(float delta, World world) {
